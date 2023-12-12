@@ -1,0 +1,2 @@
+UTILITIES = UTILITIES or {}
+UTILITIES.Name = "Dev Helper"
