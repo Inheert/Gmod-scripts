@@ -1,5 +1,7 @@
-include( 'autorun/sh_basesystem.lua')
+include( 'autorun/sh_basesystem.lua');
 
-concommand.Add('pute', function (ply)
-    BBSYSTEM:PrintSomething()
+concommand.Add("bbsystem_create", function (ply)
+    fire_camp = ents.Create("bsystem_firecamp")
+    fire_camp:SetPos(ply:GetPos())
+    fire_camp:Spawn()
 end)
