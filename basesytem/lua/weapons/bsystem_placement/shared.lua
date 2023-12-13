@@ -16,11 +16,12 @@ SWEP.Secondary.Automatic = false        -- Automatic/Semi Auto
 SWEP.Secondary.Ammo = ""
 
 SWEP.parentid = nil
-SWEP.structureAngle = Angle(90, 0, 0)
 SWEP.actualAngle = 0
+SWEP.defaultModel = "models/hunter/blocks/cube025x025x025.mdl"
 
 if (CLIENT) then
-	LocalPlayer().GhostModel = "models/props_c17/FurnitureCouch001a.mdl"
+	LocalPlayer().GhostModel = "models/hunter/blocks/cube025x025x025.mdl"
+	LocalPlayer().GhostModelAngle = Angle(90, 0, 0)
 
 	net.Receive("BuildModel", function(len, ply)
 		local model = net.ReadString()
@@ -30,6 +31,9 @@ end
 
 function SWEP:OnRemove()
 	self:ReleaseGhostEntity()
+	hook.Remove('KeyPress', 'left_click')
+	hook.Remove('CreateMove', 'CheckKeyDown')
+	hook.Remove('CalcView', 'BlockViewWhenRightClick')
 end
 
 hook.Add("PlayerSwitchWeapon", "MonPlayerSwitchWeaponHook", function(ply, oldWeapon, newWeapon)
@@ -50,28 +54,51 @@ function SWEP:Initialize()
             net.Start('PlaceBuild')
             net.WriteTable(data)
             net.SendToServer()
-
-            -- Retirez le hook après avoir effectué l'action.
             hook.Remove('KeyPress', 'left_click')
         end
     end)
+
+	local blockedViewAngle = nil
+	local lastMouseX = 0
+	hook.Add('CreateMove', 'CheckKeyDown', function(cmd)
+		local ply = LocalPlayer()
+		if (cmd:KeyDown(IN_ATTACK2)) then
+			if (blockedViewAngle == nil) then
+				blockedViewAngle = cmd:GetViewAngles()
+			end
+			cmd:SetViewAngles(blockedViewAngle)
+			if (cmd:GetMouseX() < lastMouseX) then
+				ply.GhostModelAngle.y = ply.GhostModelAngle.y - 1
+				print(tostring(LocalPlayer().GhostModelAngle.y))
+			elseif (cmd:GetMouseX() > lastMouseX) then
+				ply.GhostModelAngle.y = ply.GhostModelAngle.y + 1
+			end
+			if (ply.GhostModelAngle.y == 360 or ply.GhostModelAngle.y == -360) then
+				ply.GhostModelAngle.y = 0
+			end
+			print(tostring(ply.GhostModelAngle.y))
+		else
+			blockedViewAngle = nil
+		end
+	end)
 end
 
 function SWEP:Think()
 	local mdl = 'models/hunter/blocks/cube025x025x025.mdl'
-	if CLIENT then
+	if (CLIENT) then
 		mdl = self:GetOwner().GhostModel
+		if (mdl == nil) then
+			mdl = self.defaultModel
+		end
+		print(LocalPlayer().GhostModelAngle)
 	end
 	if not IsValid(self.GhostEntity) then
 		self:MakeGhostEntity(mdl, vector_origin, angle_zero)
-
 	end
 	self:UpdateGhostStructure(self.GhostEntity, self:GetOwner())
-
 	if CLIENT and self.GhostEntity then 
 		self.GhostEntity:SetColor(Color(255, 255, 255))
 	end
-
 end
 
 function SWEP:UpdateGhostStructure(ent, ply)
@@ -86,7 +113,7 @@ function SWEP:UpdateGhostStructure(ent, ply)
 	end
 
 
-	local ang = trace.HitNormal:Angle() + self.structureAngle
+	local ang = trace.HitNormal:Angle() + LocalPlayer().GhostModelAngle
 	ent:SetAngles(ang)
 
 	local curPos = ent:GetPos()

@@ -37,8 +37,6 @@ net.Receive("PlaceBuild", function(len, ply)
     Build[ply] = 1
     table.insert(Build, tostring(ply))
     local message = net.ReadTable()
-    PrintTable(message)
-    print(message[4].x)
     local myProp = ents.Create("prop_physics")
     if IsValid(myProp) then
         myProp:SetModel(message[5])
