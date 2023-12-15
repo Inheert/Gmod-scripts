@@ -20,6 +20,8 @@ end
 
 function ENT:Use(activator, caller)
     net.Start("OpenPanel")
+    print('ZIN')
+    PrintTable(usermessage.GetTable())
     net.Send(activator)
 end
 
